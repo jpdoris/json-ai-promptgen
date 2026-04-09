@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import TheWelcome from '../components/TheWelcome.vue'
+import PromptTemplateEditorView from '../views/PromptTemplateEditorView.vue'
 </script>
 
 <template>
   <main>
-    <TheWelcome />
+    <PromptTemplateEditorView />
   </main>
 </template>
