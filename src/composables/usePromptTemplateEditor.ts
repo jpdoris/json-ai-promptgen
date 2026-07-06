@@ -1,6 +1,6 @@
 // src/composables/usePromptTemplateEditor.ts
 import { computed, ref, toRaw, watch } from 'vue'
-import { defaultAdapterId, getAdapter, resolveModel } from '@/adapters'
+import { defaultAdapterId, getAdapter, resolveModel, validateTemplate } from '@/adapters'
 import type { CanonicalPromptTemplate, PromptRole } from '@/types/prompt-schema'
 
 // Editor-local message carries an `id` for stable list rendering; it is stripped
@@ -156,6 +156,10 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     getAdapter(form.value.provider).toPayload(canonicalTemplate.value),
   )
 
+  const validationIssues = computed(() =>
+    validateTemplate(getAdapter(form.value.provider), canonicalTemplate.value),
+  )
+
   function addMessage(role: PromptRole = 'user') {
     form.value.messages.push(createMessage(role))
   }
@@ -221,6 +225,7 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     isValid,
     canonicalTemplate,
     payloadPreview,
+    validationIssues,
     addMessage,
     removeMessage,
     reorderMessages,

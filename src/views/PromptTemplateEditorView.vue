@@ -12,6 +12,7 @@ const {
   schemaError,
   isValid,
   payloadPreview,
+  validationIssues,
   addMessage,
   removeMessage,
   reorderMessages,
@@ -179,6 +180,10 @@ function handleSubmit() {
       </div>
 
       <p class="sr-only" role="status" aria-live="polite">{{ copied ? 'Copied' : '' }}</p>
+
+      <ul v-if="validationIssues.length" class="preview-warnings" aria-live="polite">
+        <li v-for="issue in validationIssues" :key="issue">{{ issue }}</li>
+      </ul>
       <pre>{{ payloadJson }}</pre>
     </aside>
     </div>
@@ -292,6 +297,21 @@ function handleSubmit() {
   background: var(--accent-tint);
   border-color: var(--border-strong);
   color: var(--accent);
+}
+.preview-warnings {
+  list-style: none;
+  margin: 0 0 0.75rem;
+  padding: 0.6rem 0.75rem;
+  display: grid;
+  gap: 0.35rem;
+  border: 1px solid var(--danger-border);
+  border-radius: 8px;
+  background: var(--danger-soft);
+  color: var(--danger);
+  font-size: 0.82rem;
+}
+.preview-warnings li::before {
+  content: '⚠ ';
 }
 .sr-only {
   position: absolute;

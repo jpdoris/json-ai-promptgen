@@ -19,6 +19,15 @@ export type ModelSpec = {
 // A PromptAdapter converts a provider-neutral CanonicalPromptTemplate into the
 // request body for one provider's API. Add a new provider by implementing this
 // interface and registering it in adapters/index.ts.
+// Provider-specific constraints on the message sequence. developer messages fold
+// into the system prompt, so they don't count as conversation turns.
+export type MessageConstraints = {
+  /** At least one non-developer (user/assistant) message is required. */
+  requireNonEmpty?: boolean
+  /** The first non-developer message must be a user turn. */
+  requireLeadingUser?: boolean
+}
+
 export interface PromptAdapter {
   /** Stable id used as the registry key and in editor state. */
   id: string
@@ -34,6 +43,8 @@ export interface PromptAdapter {
   models: ModelSpec[]
   /** Default model id (must be one of `models`) used when the provider is selected. */
   defaultModel: string
+  /** Optional message-sequence rules the provider enforces. */
+  messageConstraints?: MessageConstraints
   /** Build the provider-specific request payload from a canonical template. */
   toPayload(template: CanonicalPromptTemplate, vars?: TemplateVariables): Record<string, unknown>
 }

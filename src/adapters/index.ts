@@ -4,10 +4,12 @@
 import type { PromptAdapter } from './types'
 import { openaiAdapter } from './openai'
 import { anthropicAdapter } from './anthropic'
+import { geminiAdapter } from './gemini'
 
 export const adapters: Record<string, PromptAdapter> = {
   [openaiAdapter.id]: openaiAdapter,
   [anthropicAdapter.id]: anthropicAdapter,
+  [geminiAdapter.id]: geminiAdapter,
 }
 
 export const adapterList: PromptAdapter[] = Object.values(adapters)
@@ -19,5 +21,6 @@ export function getAdapter(id: string): PromptAdapter {
 }
 
 export { resolveModel } from './models'
+export { validateTemplate } from './validate'
 
-export type { ModelSpec, PromptAdapter, TemplateVariables } from './types'
+export type { MessageConstraints, ModelSpec, PromptAdapter, TemplateVariables } from './types'

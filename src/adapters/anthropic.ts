@@ -73,5 +73,6 @@ export const anthropicAdapter: PromptAdapter = {
   supportedRoles: ['user', 'assistant'],
   models: anthropicModels,
   defaultModel: 'claude-opus-4-8',
+  messageConstraints: { requireNonEmpty: true, requireLeadingUser: true },
   toPayload: toAnthropicMessagesPayload,
 }
