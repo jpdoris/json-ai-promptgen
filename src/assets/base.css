@@ -21,6 +21,7 @@
   --accent-contrast: #ffffff;
   --accent-soft: #9ac0b9;
   --accent-tint: #e5f0ec;
+  --accent-tint-strong: #cfe6dd;
 
   --danger: #c0453a;
   --danger-hover: #a83a30;
@@ -44,6 +45,7 @@
     --accent-contrast: #10201c;
     --accent-soft: #9ac0b9;
     --accent-tint: #223029;
+    --accent-tint-strong: #223029;
 
     --danger: #e0776c;
     --danger-hover: #ec8b81;

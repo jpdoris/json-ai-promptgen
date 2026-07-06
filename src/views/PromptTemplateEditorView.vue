@@ -57,6 +57,16 @@ function handleSubmit() {
 
 <template>
   <div class="editor-page">
+    <header class="masthead">
+      <span class="brand-mark" aria-hidden="true">{&nbsp;}</span>
+      <div class="brand-text">
+        <h1 class="brand-name">json-promptgen</h1>
+        <p class="brand-tagline">
+          Build prompt templates and preview the exact JSON payload for each model provider.
+        </p>
+      </div>
+    </header>
+
     <header class="toolbar">
       <label class="example-picker">
         <span>Load example</span>
@@ -95,6 +105,44 @@ function handleSubmit() {
 .editor-page {
   display: grid;
   gap: 1rem;
+}
+.masthead {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border);
+}
+.brand-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--accent-tint-strong);
+  color: var(--accent);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-weight: 700;
+  font-size: 1.35rem;
+}
+.brand-text {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+.brand-name {
+  font-size: 1.75rem;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+.brand-tagline {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--muted);
+  max-width: 60ch;
 }
 .toolbar {
   display: flex;
