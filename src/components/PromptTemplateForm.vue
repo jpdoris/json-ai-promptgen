@@ -29,6 +29,13 @@ function onDragStart(id: string, event: DragEvent) {
   if (event.dataTransfer) {
     event.dataTransfer.effectAllowed = 'move'
     event.dataTransfer.setData('text/plain', id)
+    // Use the whole message card as the drag image so it lifts and follows the
+    // cursor, rather than dragging just the small handle button.
+    const card = (event.currentTarget as HTMLElement).closest('.message-card')
+    if (card) {
+      const rect = card.getBoundingClientRect()
+      event.dataTransfer.setDragImage(card, event.clientX - rect.left, event.clientY - rect.top)
+    }
   }
 }
 
@@ -230,9 +237,8 @@ function handleSubmit() {
         @dragleave="onDragLeave(message.id)"
         @drop.prevent="onDrop(message.id)"
       >
-        <div class="message-toolbar">
+        <div v-if="form.messages.length > 1" class="message-dragbar">
           <button
-            v-if="form.messages.length > 1"
             :ref="(el) => setHandleRef(message.id, el as Element | null)"
             type="button"
             class="drag-handle"
@@ -244,34 +250,56 @@ function handleSubmit() {
             @keydown.up.prevent="moveByKeyboard(message.id, 'up')"
             @keydown.down.prevent="moveByKeyboard(message.id, 'down')"
           >
-            ⠿
+            <span aria-hidden="true" class="drag-grip">⠿</span>
+            <span class="drag-label">Drag to reorder</span>
           </button>
-
-          <label class="field compact">
-            <span class="field-label">
-              Role
-              <FieldHint
-                text="Who the message is from: developer (guidance), user (input), or assistant (a prior model reply)."
-              />
-            </span>
-            <select
-              :value="message.role"
-              @change="
-                updateMessage(message.id, {
-                  role: ($event.target as HTMLSelectElement).value as PromptRole,
-                })
-              "
+          <button
+            type="button"
+            class="icon-button"
+            title="Remove message"
+            aria-label="Remove message"
+            @click="$emit('remove-message', message.id)"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
             >
-              <option value="developer">developer</option>
-              <option value="user">user</option>
-              <option value="assistant">assistant</option>
-            </select>
-          </label>
-
-          <div v-if="form.messages.length > 1" class="message-actions">
-            <button type="button" @click="$emit('remove-message', message.id)">Remove</button>
-          </div>
+              <path d="M3 6h18" />
+              <path d="M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2" />
+              <path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" />
+              <path d="M10 11v6" />
+              <path d="M14 11v6" />
+            </svg>
+          </button>
         </div>
+
+        <label class="field compact">
+          <span class="field-label">
+            Role
+            <FieldHint
+              text="Who the message is from: developer (guidance), user (input), or assistant (a prior model reply)."
+            />
+          </span>
+          <select
+            :value="message.role"
+            @change="
+              updateMessage(message.id, {
+                role: ($event.target as HTMLSelectElement).value as PromptRole,
+              })
+            "
+          >
+            <option value="developer">developer</option>
+            <option value="user">user</option>
+            <option value="assistant">assistant</option>
+          </select>
+        </label>
 
         <label class="field">
           <span class="field-label">
@@ -373,7 +401,6 @@ function handleSubmit() {
   gap: 1rem;
 }
 .panel-header,
-.message-toolbar,
 .actions {
   display: flex;
   align-items: center;
@@ -414,17 +441,33 @@ function handleSubmit() {
   border-color: hsla(160, 100%, 37%, 1);
   box-shadow: 0 0 0 1px hsla(160, 100%, 37%, 1);
 }
+.message-dragbar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .drag-handle {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   cursor: grab;
   user-select: none;
-  padding: 0.125rem 0.375rem;
+  padding: 0.25rem 0.5rem;
   color: #999;
-  font-size: 1.1rem;
+  font-size: 0.78rem;
   line-height: 1;
-  align-self: center;
-  background: none;
-  border: none;
+  text-align: left;
+  background: #f6f6f6;
+  border: 1px solid #ececec;
   border-radius: 6px;
+  transition:
+    background-color 0.12s ease,
+    color 0.12s ease;
+}
+.drag-handle:hover {
+  background: #efefef;
+  color: #666;
 }
 .drag-handle:active {
   cursor: grabbing;
@@ -433,6 +476,31 @@ function handleSubmit() {
   outline: 2px solid hsla(160, 100%, 37%, 1);
   outline-offset: 1px;
   color: #555;
+}
+.drag-grip {
+  font-size: 1.05rem;
+}
+.icon-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.375rem;
+  color: #b42318;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition:
+    background-color 0.12s ease,
+    border-color 0.12s ease;
+}
+.icon-button:hover {
+  background: #fdeceb;
+  border-color: #f3c9c5;
+}
+.icon-button:focus-visible {
+  outline: 2px solid #b42318;
+  outline-offset: 1px;
 }
 .checkbox {
   display: flex;
