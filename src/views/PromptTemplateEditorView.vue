@@ -65,6 +65,7 @@ function handleSubmit() {
           Build prompt templates and preview the exact JSON payload for each model provider.
         </p>
       </div>
+      <ThemeToggle class="masthead-toggle" />
     </header>
 
     <header class="toolbar">
@@ -77,7 +78,6 @@ function handleSubmit() {
           </option>
         </select>
       </label>
-      <ThemeToggle />
     </header>
 
     <div class="editor-layout">
@@ -142,7 +142,10 @@ function handleSubmit() {
   margin: 0;
   font-size: 0.85rem;
   color: var(--muted);
-  max-width: 60ch;
+}
+.masthead-toggle {
+  margin-left: auto;
+  align-self: center;
 }
 .toolbar {
   display: flex;
