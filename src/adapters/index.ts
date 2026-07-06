@@ -18,4 +18,6 @@ export function getAdapter(id: string): PromptAdapter {
   return adapters[id] ?? openaiAdapter
 }
 
-export type { PromptAdapter, TemplateVariables } from './types'
+export { resolveModel } from './models'
+
+export type { ModelSpec, PromptAdapter, TemplateVariables } from './types'

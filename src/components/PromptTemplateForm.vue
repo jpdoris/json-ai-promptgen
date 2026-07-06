@@ -1,7 +1,7 @@
 <!-- src/components/PromptTemplateForm.vue -->
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { adapterList, getAdapter } from '@/adapters'
+import { adapterList, getAdapter, resolveModel } from '@/adapters'
 import CollapsiblePanel from '@/components/CollapsiblePanel.vue'
 import FieldHint from '@/components/FieldHint.vue'
 import type { PromptTemplateForm } from '@/composables/usePromptTemplateEditor'
@@ -22,7 +22,20 @@ const emit = defineEmits<{
 
 const providers = adapterList
 
+const CUSTOM_MODEL = '__custom__'
+
 const currentAdapter = computed(() => getAdapter(props.modelValue.provider))
+const currentModels = computed(() => currentAdapter.value.models)
+const modelSpec = computed(() => resolveModel(currentModels.value, props.modelValue.model))
+const isCustomModel = computed(
+  () => !currentModels.value.some((model) => model.id === props.modelValue.model),
+)
+
+function onModelSelect(event: Event) {
+  const value = (event.target as HTMLSelectElement).value
+  // Choosing "Custom…" clears the field so the free-text input takes over.
+  updateField('model', value === CUSTOM_MODEL ? '' : value)
+}
 
 const draggingId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
@@ -161,11 +174,29 @@ function handleSubmit() {
       <label class="field">
         <span class="field-label">
           Model
-          <FieldHint text="The specific model id to call, e.g. gpt-4.1. Sent as the request's model field." />
+          <FieldHint
+            text="Which model to target. Pick from the provider's list, or choose Custom to enter any model id."
+          />
+        </span>
+        <select :value="isCustomModel ? CUSTOM_MODEL : form.model" @change="onModelSelect">
+          <option v-for="model in currentModels" :key="model.id" :value="model.id">
+            {{ model.label }}
+          </option>
+          <option :value="CUSTOM_MODEL">Custom…</option>
+        </select>
+      </label>
+
+      <label v-if="isCustomModel" class="field">
+        <span class="field-label">
+          Custom model id
+          <FieldHint
+            text="Any model id the provider accepts — e.g. a pinned dated snapshot not in the list."
+          />
         </span>
         <input
           :value="form.model"
           type="text"
+          placeholder="e.g. claude-haiku-4-5-20251001"
           @input="updateField('model', ($event.target as HTMLInputElement).value)"
         />
       </label>
@@ -186,7 +217,7 @@ function handleSubmit() {
     </CollapsiblePanel>
 
     <CollapsiblePanel title="Generation">
-      <label v-if="currentAdapter.supportsTemperature" class="field">
+      <label v-if="modelSpec.supportsTemperature" class="field">
         <span class="field-label">
           Temperature
           <FieldHint
@@ -212,6 +243,7 @@ function handleSubmit() {
           :value="form.maxOutputTokens"
           type="number"
           min="1"
+          :max="modelSpec.maxOutputTokens || undefined"
           step="1"
           @input="updateField('maxOutputTokens', Number(($event.target as HTMLInputElement).value))"
         />
@@ -289,9 +321,9 @@ function handleSubmit() {
               })
             "
           >
-            <option value="developer">developer</option>
-            <option value="user">user</option>
-            <option value="assistant">assistant</option>
+            <option v-for="role in currentAdapter.supportedRoles" :key="role" :value="role">
+              {{ role }}
+            </option>
           </select>
         </label>
 
@@ -319,7 +351,7 @@ function handleSubmit() {
       </button>
     </CollapsiblePanel>
 
-    <CollapsiblePanel title="Structured output">
+    <CollapsiblePanel v-if="modelSpec.supportsStructuredOutput" title="Structured output">
       <label class="checkbox">
         <input
           :checked="form.structuredOutput.enabled"

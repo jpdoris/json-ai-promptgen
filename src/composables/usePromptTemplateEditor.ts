@@ -1,6 +1,6 @@
 // src/composables/usePromptTemplateEditor.ts
 import { computed, ref, toRaw, watch } from 'vue'
-import { defaultAdapterId, getAdapter } from '@/adapters'
+import { defaultAdapterId, getAdapter, resolveModel } from '@/adapters'
 import type { CanonicalPromptTemplate, PromptRole } from '@/types/prompt-schema'
 
 // Editor-local message carries an `id` for stable list rendering; it is stripped
@@ -36,6 +36,14 @@ const createMessage = (role: PromptRole = 'user', content = ''): EditorMessage =
   role,
   content,
 })
+
+// Coerce any message on a role the provider can't express down to `user`.
+function coerceRoles(messages: EditorMessage[], provider: string): EditorMessage[] {
+  const allowed = new Set(getAdapter(provider).supportedRoles)
+  return messages.map((message) =>
+    allowed.has(message.role) ? message : { ...message, role: 'user' as PromptRole },
+  )
+}
 
 function createDefaultForm(initial?: Partial<PromptTemplateForm>): PromptTemplateForm {
   const provider = initial?.provider ?? defaultAdapterId
@@ -74,13 +82,18 @@ function createDefaultForm(initial?: Partial<PromptTemplateForm>): PromptTemplat
 export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
   const form = ref<PromptTemplateForm>(createDefaultForm(initial))
 
-  // Switching providers swaps in that provider's default model so the
-  // generated payload targets a model the provider actually serves.
+  // Switching providers swaps in that provider's default model, and coerces any
+  // messages using a role the new provider can't express.
   watch(
     () => form.value.provider,
     (provider) => {
       form.value.model = getAdapter(provider).defaultModel
+      form.value.messages = coerceRoles(form.value.messages, provider)
     },
+  )
+
+  const modelSpec = computed(() =>
+    resolveModel(getAdapter(form.value.provider).models, form.value.model),
   )
 
   const parsedSchema = computed<Record<string, unknown> | null>(() => {
@@ -99,7 +112,7 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
 
   const schemaError = computed(() => {
     const current = form.value.structuredOutput
-    if (!current.enabled) return ''
+    if (!current.enabled || !modelSpec.value.supportsStructuredOutput) return ''
     if (!current.schemaText.trim()) return 'Schema is required.'
     return parsedSchema.value ? '' : 'Schema must be valid JSON.'
   })
@@ -170,14 +183,18 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
   // Inverse of `canonicalTemplate`: expand a provider-neutral template back into
   // editable form state. Keeps the currently selected provider.
   function loadTemplate(template: CanonicalPromptTemplate, name?: string) {
+    const provider = form.value.provider
     form.value = createDefaultForm({
       name,
-      provider: form.value.provider,
+      provider,
       model: template.model,
       instructions: template.instructions,
       temperature: template.temperature,
       maxOutputTokens: template.maxOutputTokens,
-      messages: template.messages.map((message) => createMessage(message.role, message.content)),
+      messages: coerceRoles(
+        template.messages.map((message) => createMessage(message.role, message.content)),
+        provider,
+      ),
       structuredOutput: template.structuredOutput
         ? {
             enabled: true,
