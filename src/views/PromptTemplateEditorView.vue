@@ -236,6 +236,11 @@ function handleSubmit() {
   margin-left: auto;
   align-self: center;
 }
+@media (max-width: 560px) {
+  .masthead-toggle {
+    align-self: flex-start;
+  }
+}
 .toolbar {
   display: flex;
   align-items: end;

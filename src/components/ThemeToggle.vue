@@ -93,4 +93,14 @@ const labels: Record<ThemeMode, string> = {
 .theme-toggle:hover .tt-icon {
   color: var(--accent);
 }
+
+/* On narrow screens drop the label to an icon-only button. */
+@media (max-width: 560px) {
+  .tt-label {
+    display: none;
+  }
+  .theme-toggle {
+    padding: 0.4rem;
+  }
+}
 </style>

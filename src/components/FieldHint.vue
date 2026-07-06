@@ -43,7 +43,7 @@ defineProps<{ text: string }>()
   left: -0.25rem;
   z-index: 10;
   width: max-content;
-  max-width: 240px;
+  max-width: min(240px, calc(100vw - 1.5rem));
   padding: 0.5rem 0.625rem;
   border-radius: 8px;
   background: var(--ink);
@@ -54,11 +54,13 @@ defineProps<{ text: string }>()
   text-align: left;
   white-space: normal;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+  /* display:none (not visibility:hidden) so the hidden bubble doesn't occupy
+     layout and add phantom horizontal scroll on narrow viewports. */
+  display: none;
   opacity: 0;
-  visibility: hidden;
   transition:
     opacity 0.12s ease,
-    visibility 0.12s ease;
+    display 0.12s allow-discrete;
 }
 .hint-bubble::after {
   content: '';
@@ -72,7 +74,10 @@ defineProps<{ text: string }>()
 .hint:hover .hint-bubble,
 .hint:focus .hint-bubble,
 .hint:focus-visible .hint-bubble {
+  display: block;
   opacity: 1;
-  visibility: visible;
+  @starting-style {
+    opacity: 0;
+  }
 }
 </style>
