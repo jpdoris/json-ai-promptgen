@@ -23,12 +23,17 @@ defineProps<{ text: string }>()
   width: 1rem;
   height: 1rem;
   border-radius: 50%;
-  border: 1px solid #b0b0b0;
-  color: #666;
+  border: 1px solid var(--border-strong);
+  color: var(--muted);
   font-size: 0.7rem;
   line-height: 1;
   cursor: help;
   user-select: none;
+}
+.hint:hover .hint-marker,
+.hint:focus-visible .hint-marker {
+  border-color: var(--accent);
+  color: var(--accent);
 }
 .hint-bubble {
   position: absolute;
@@ -41,8 +46,8 @@ defineProps<{ text: string }>()
   max-width: 240px;
   padding: 0.5rem 0.625rem;
   border-radius: 8px;
-  background: #1f2933;
-  color: #f5f7fa;
+  background: var(--ink);
+  color: var(--ground);
   font-size: 0.75rem;
   font-weight: normal;
   line-height: 1.35;
@@ -62,7 +67,7 @@ defineProps<{ text: string }>()
   /* Keep the arrow pointing at the marker now that the bubble is left-anchored. */
   left: 0.5rem;
   border: 5px solid transparent;
-  border-top-color: #1f2933;
+  border-top-color: var(--ink);
 }
 .hint:hover .hint-bubble,
 .hint:focus .hint-bubble,

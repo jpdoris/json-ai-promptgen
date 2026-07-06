@@ -2,6 +2,7 @@
 <script setup lang="ts">
 import { computed, ref } from 'vue'
 import PromptTemplateForm from '@/components/PromptTemplateForm.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { getAdapter } from '@/adapters'
 import { examples, getExample } from '@/examples'
 import { usePromptTemplateEditor } from '@/composables/usePromptTemplateEditor'
@@ -66,6 +67,7 @@ function handleSubmit() {
           </option>
         </select>
       </label>
+      <ThemeToggle />
     </header>
 
     <div class="editor-layout">
@@ -96,12 +98,18 @@ function handleSubmit() {
 }
 .toolbar {
   display: flex;
-  align-items: center;
+  align-items: end;
+  justify-content: space-between;
   gap: 0.75rem;
 }
 .example-picker {
   display: grid;
   gap: 0.375rem;
+}
+.example-picker > span {
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: var(--muted);
 }
 .editor-layout {
   width: 100%;
@@ -110,9 +118,14 @@ function handleSubmit() {
   gap: 1rem;
 }
 .preview-panel {
-  border: 1px solid #dcdcdc;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
+  align-self: start;
+  position: sticky;
+  top: 1rem;
+  max-height: calc(100vh - 2rem);
   overflow: auto;
 }
 .preview-header {
@@ -120,9 +133,20 @@ function handleSubmit() {
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.preview-header h2 {
+  font-size: 1rem;
+  font-weight: 600;
 }
 pre {
+  margin: 0;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.55;
   white-space: pre-wrap;
   word-break: break-word;
 }

@@ -394,11 +394,17 @@ function handleSubmit() {
   gap: 1rem;
 }
 .panel {
-  border: 1px solid #dcdcdc;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 12px;
   padding: 1rem;
   display: grid;
   gap: 1rem;
+}
+.panel h2 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 .panel-header,
 .actions {
@@ -425,21 +431,23 @@ function handleSubmit() {
   width: 100%;
 }
 .message-card {
-  border: 1px solid #e6e6e6;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
   border-radius: 10px;
   padding: 0.875rem;
   display: grid;
   gap: 0.75rem;
   transition:
     border-color 0.12s ease,
+    box-shadow 0.12s ease,
     opacity 0.12s ease;
 }
 .message-card.dragging {
   opacity: 0.5;
 }
 .message-card.drag-over {
-  border-color: hsla(160, 100%, 37%, 1);
-  box-shadow: 0 0 0 1px hsla(160, 100%, 37%, 1);
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent);
 }
 .message-dragbar {
   display: flex;
@@ -453,29 +461,30 @@ function handleSubmit() {
   gap: 0.5rem;
   cursor: grab;
   user-select: none;
-  padding: 0.25rem 0.5rem;
-  color: #999;
+  padding: 0.3rem 0.55rem;
+  color: var(--muted);
   font-size: 0.78rem;
+  font-weight: 500;
   line-height: 1;
   text-align: left;
-  background: #f6f6f6;
-  border: 1px solid #ececec;
+  background: var(--surface);
+  border: 1px solid var(--border);
   border-radius: 6px;
   transition:
     background-color 0.12s ease,
     color 0.12s ease;
 }
 .drag-handle:hover {
-  background: #efefef;
-  color: #666;
+  background: var(--accent-tint);
+  color: var(--ink);
 }
 .drag-handle:active {
   cursor: grabbing;
 }
 .drag-handle:focus-visible {
-  outline: 2px solid hsla(160, 100%, 37%, 1);
+  outline: 2px solid var(--focus);
   outline-offset: 1px;
-  color: #555;
+  color: var(--ink);
 }
 .drag-grip {
   font-size: 1.05rem;
@@ -485,7 +494,7 @@ function handleSubmit() {
   align-items: center;
   justify-content: center;
   padding: 0.375rem;
-  color: #b42318;
+  color: var(--danger);
   background: none;
   border: 1px solid transparent;
   border-radius: 6px;
@@ -495,11 +504,11 @@ function handleSubmit() {
     border-color 0.12s ease;
 }
 .icon-button:hover {
-  background: #fdeceb;
-  border-color: #f3c9c5;
+  background: var(--danger-soft);
+  border-color: var(--danger-border);
 }
 .icon-button:focus-visible {
-  outline: 2px solid #b42318;
+  outline: 2px solid var(--danger);
   outline-offset: 1px;
 }
 .checkbox {
@@ -508,6 +517,7 @@ function handleSubmit() {
   gap: 0.5rem;
 }
 .error {
-  color: #b42318;
+  color: var(--danger);
+  font-size: 0.85rem;
 }
 </style>
