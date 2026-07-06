@@ -28,6 +28,8 @@ Opus 4.8 doesn't accept it.</em></p>
 - **Message editor** — reorder messages by drag-and-drop or keyboard, with per-provider role
   options and shape validation (e.g. Anthropic/Gemini must start with a user turn).
 - **Template variables** — `{{ placeholders }}` in message and instruction text.
+- **Save & load** — export the editable template to a `.json` file and import it back later (see
+  [Saving & loading templates](#saving--loading-templates)).
 - **Ready-made examples**, a live **payload preview**, **copy** and **download** actions, and a
   theme-aware UI (light / dark / system) with a matching favicon.
 - **Static & portable** — builds to plain HTML/CSS/JS; host it anywhere.
@@ -42,6 +44,29 @@ Editor form  ──▶  CanonicalPromptTemplate  ──▶  Provider adapter  �
 The canonical template is provider-neutral. Each **adapter** owns the translation to one
 provider's API, plus that provider's model catalog, allowed roles, and message constraints.
 Adding a provider or model touches only the adapter layer — the editor and templates never change.
+
+## Saving & loading templates
+
+There are **two** different JSON files, and it helps to know which is which:
+
+- **Payload JSON** — the *Download* icon in the preview panel. This is the provider-specific
+  request body (`text.format`, `output_config`, `contents`…). It's **output**: paste it into your
+  own backend/SDK to run the request. It's provider-specific and not meant to be re-imported.
+- **Template JSON** — the *Export template* button. This is the **editable template itself** (name,
+  provider, model, messages, structured-output config) — the source you were editing, and it
+  round-trips.
+
+Use **Export template** to save your work and **Import template…** (top toolbar) to load it back —
+handy for sharing a template with a teammate or keeping templates in version control. Exported
+files use a small versioned envelope so imports can be validated:
+
+```json
+{ "app": "json-promptgen", "version": 1, "template": { "...": "the editor state" } }
+```
+
+On import, an unknown provider falls back to the default and message roles are coerced to what the
+selected provider supports (the same way examples load). Files that aren't valid json-promptgen
+templates are rejected with an inline message instead of crashing.
 
 ## Providers & models
 
@@ -77,7 +102,28 @@ Then open the printed local URL.
 | `npm run type-check` | `vue-tsc` type checking |
 | `npm run lint` | oxlint + ESLint (with `--fix`) |
 | `npm run format` | Prettier over `src/` |
-| `npm run test:unit` | Vitest (no unit tests yet) |
+| `npm run test:unit` | Run the Vitest unit tests |
+
+## Testing
+
+Unit tests run with [Vitest](https://vitest.dev/):
+
+```sh
+npm run test:unit    # run once
+npx vitest           # watch mode
+```
+
+Coverage targets the logic that matters rather than the framework:
+
+- **Adapters** (`src/adapters/__tests__`) — payload translation for each provider (system
+  extraction, role mapping, per-model temperature/structured-output gating), plus `interpolate`,
+  `resolveModel`, and message-shape validation.
+- **Editor composable** (`src/composables/__tests__`) — canonical-template derivation, provider
+  switching (model swap + role coercion), the export → import round-trip, and schema validation.
+- **Template file** (`src/lib/__tests__`) — the save-file envelope and its parser.
+
+The adapter and file-format suites are pure functions; the composable suite declares
+`// @vitest-environment node` per file so `crypto.randomUUID()` (used for message ids) is available.
 
 ## Project structure
 
@@ -88,9 +134,12 @@ src/
   components/      Editor UI (form, collapsible panels, field hints, theme toggle)
   composables/     Editor state (usePromptTemplateEditor), theme (useTheme)
   examples/        Ready-made canonical templates shown in "Load example"
+  lib/             Template save-file format (export/import envelope + parser)
   types/           CanonicalPromptTemplate + shared prompt types
   views/           The editor page
 ```
+
+Tests live alongside the code they cover, in `__tests__/` directories.
 
 ## Extending
 

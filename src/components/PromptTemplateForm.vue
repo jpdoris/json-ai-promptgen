@@ -413,7 +413,7 @@ function handleSubmit() {
     </CollapsiblePanel>
 
     <div class="actions">
-      <button type="submit">Save template</button>
+      <button type="submit">Export template</button>
     </div>
   </form>
 </template>

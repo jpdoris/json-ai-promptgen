@@ -1,5 +1,5 @@
 // src/composables/usePromptTemplateEditor.ts
-import { computed, ref, toRaw, watch } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { defaultAdapterId, getAdapter, resolveModel, validateTemplate } from '@/adapters'
 import type { CanonicalPromptTemplate, PromptRole } from '@/types/prompt-schema'
 
@@ -211,12 +211,38 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     })
   }
 
+  // Load a full form (e.g. an imported template file). Unknown fields fall back
+  // to defaults, an unknown provider resets to the default, message ids are
+  // regenerated, and roles are coerced to what the provider supports.
+  function loadForm(
+    data: Partial<Omit<PromptTemplateForm, 'messages'>> & {
+      messages?: Array<{ role: PromptRole; content: string }>
+    },
+  ) {
+    const requested = data.provider ?? defaultAdapterId
+    const provider = getAdapter(requested).id === requested ? requested : defaultAdapterId
+
+    const next = createDefaultForm({
+      ...data,
+      provider,
+      messages: data.messages?.length
+        ? data.messages.map((message) => createMessage(message.role, message.content))
+        : undefined,
+    })
+    next.messages = coerceRoles(next.messages, provider)
+    form.value = next
+  }
+
   function reset() {
     form.value = createDefaultForm({ provider: form.value.provider })
   }
 
-  function exportTemplate() {
-    return structuredClone(toRaw(form.value))
+  function exportTemplate(): PromptTemplateForm {
+    // Deep-clone to a plain object. toRaw() only unwraps the top-level proxy —
+    // nested reactive arrays/objects remain proxies and make structuredClone
+    // throw DataCloneError. The form is JSON-safe, so a JSON round-trip is a
+    // reliable plain-object snapshot.
+    return JSON.parse(JSON.stringify(form.value)) as PromptTemplateForm
   }
 
   return {
@@ -231,6 +257,7 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     removeMessage,
     reorderMessages,
     loadTemplate,
+    loadForm,
     reset,
     exportTemplate,
   }

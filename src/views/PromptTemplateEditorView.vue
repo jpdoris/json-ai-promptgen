@@ -6,17 +6,18 @@ import ThemeToggle from '@/components/ThemeToggle.vue'
 import { getAdapter } from '@/adapters'
 import { examples, getExample } from '@/examples'
 import { usePromptTemplateEditor } from '@/composables/usePromptTemplateEditor'
+import { parseTemplateFile, toTemplateFile } from '@/lib/templateFile'
 
 const {
   form,
   schemaError,
-  isValid,
   payloadPreview,
   validationIssues,
   addMessage,
   removeMessage,
   reorderMessages,
   loadTemplate,
+  loadForm,
   reset,
   exportTemplate,
 } = usePromptTemplateEditor()
@@ -35,14 +36,28 @@ function onSelectExample() {
 const providerLabel = computed(() => getAdapter(form.value.provider).label)
 const payloadJson = computed(() => JSON.stringify(payloadPreview.value, null, 2))
 
-const downloadName = computed(() => {
+const nameSlug = computed(() => {
   const slug = form.value.name
     .trim()
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')
-  return `${slug || 'prompt'}.json`
+  return slug || 'prompt'
 })
+const downloadName = computed(() => `${nameSlug.value}.json`)
+const templateFileName = computed(() => `${nameSlug.value}.promptgen.json`)
+
+function download(filename: string, text: string) {
+  const blob = new Blob([text], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = filename
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
 
 const copied = ref(false)
 
@@ -57,23 +72,37 @@ async function copyPayload() {
 }
 
 function downloadPayload() {
-  const blob = new Blob([payloadJson.value], { type: 'application/json' })
-  const url = URL.createObjectURL(blob)
-  const link = document.createElement('a')
-  link.href = url
-  link.download = downloadName.value
-  document.body.appendChild(link)
-  link.click()
-  link.remove()
-  URL.revokeObjectURL(url)
+  download(downloadName.value, payloadJson.value)
 }
 
+// "Export template" — save the editable template (not the provider payload).
 function handleSubmit() {
-  if (!isValid.value) return
+  download(templateFileName.value, JSON.stringify(toTemplateFile(exportTemplate()), null, 2))
+}
 
-  const savedTemplate = exportTemplate()
-  console.log('template', savedTemplate)
-  console.log('payload', payloadPreview.value)
+const importInput = ref<HTMLInputElement | null>(null)
+const importError = ref('')
+
+function onImportFile(event: Event) {
+  const input = event.target as HTMLInputElement
+  const file = input.files?.[0]
+  input.value = '' // allow re-importing the same file later
+  if (!file) return
+
+  const reader = new FileReader()
+  reader.onerror = () => {
+    importError.value = 'Could not read the file.'
+  }
+  reader.onload = () => {
+    try {
+      loadForm(parseTemplateFile(String(reader.result)))
+      selectedExample.value = ''
+      importError.value = ''
+    } catch (error) {
+      importError.value = error instanceof Error ? error.message : 'Could not import that file.'
+    }
+  }
+  reader.readAsText(file)
 }
 </script>
 
@@ -100,7 +129,22 @@ function handleSubmit() {
           </option>
         </select>
       </label>
+
+      <button type="button" class="secondary-btn" @click="importInput?.click()">
+        Import template…
+      </button>
+      <input
+        ref="importInput"
+        type="file"
+        accept="application/json,.json"
+        class="sr-only"
+        tabindex="-1"
+        aria-hidden="true"
+        @change="onImportFile"
+      />
     </header>
+
+    <p v-if="importError" class="import-error" role="alert">{{ importError }}</p>
 
     <div class="editor-layout">
     <PromptTemplateForm
@@ -244,8 +288,26 @@ function handleSubmit() {
 .toolbar {
   display: flex;
   align-items: end;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 0.75rem;
+}
+.secondary-btn {
+  align-self: end;
+  padding: 0.5rem 0.8rem;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.secondary-btn:hover {
+  background: var(--accent-tint);
+  border-color: var(--border-strong);
+}
+.import-error {
+  color: var(--danger);
+  font-size: 0.82rem;
 }
 .example-picker {
   display: grid;
