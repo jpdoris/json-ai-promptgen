@@ -1,7 +1,6 @@
 // adapters/openai.ts
 import type { CanonicalPromptTemplate } from '@/types/prompt-schema'
-
-type TemplateVariables = Record<string, string | number | boolean | null | undefined>
+import type { PromptAdapter, TemplateVariables } from './types'
 
 function interpolate(template: string, vars: TemplateVariables): string {
   return template.replace(/\{\{(.*?)\}\}/g, (_, rawKey) => {
@@ -11,10 +10,11 @@ function interpolate(template: string, vars: TemplateVariables): string {
   })
 }
 
+// Targets the OpenAI Responses API (client.responses.create).
 export function toOpenAIResponsesPayload(
   template: CanonicalPromptTemplate,
   vars: TemplateVariables = {},
-) {
+): Record<string, unknown> {
   const input = template.messages.map((message) => ({
     role: message.role,
     content: interpolate(message.content, vars),
@@ -38,9 +38,10 @@ export function toOpenAIResponsesPayload(
   }
 
   if (template.structuredOutput) {
-    payload.response_format = {
-      type: 'json_schema',
-      json_schema: {
+    // Responses API expects structured output under text.format.
+    payload.text = {
+      format: {
+        type: 'json_schema',
         name: template.structuredOutput.name,
         strict: template.structuredOutput.strict,
         schema: template.structuredOutput.schema,
@@ -49,4 +50,10 @@ export function toOpenAIResponsesPayload(
   }
 
   return payload
+}
+
+export const openaiAdapter: PromptAdapter = {
+  id: 'openai',
+  label: 'OpenAI',
+  toPayload: toOpenAIResponsesPayload,
 }

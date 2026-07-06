@@ -1,10 +1,14 @@
 // types/prompt-schema.ts
+// Provider-neutral representation of a prompt template. Adapters translate this
+// canonical shape into a specific provider's request body (see src/adapters).
+export type PromptRole = 'developer' | 'user' | 'assistant'
+
 export type PromptMessage = {
-  role: 'developer' | 'user' | 'assistant'
+  role: PromptRole
   content: string
 }
 
-export type OpenAIStructuredOutput = {
+export type StructuredOutput = {
   name: string
   strict: boolean
   schema: Record<string, unknown>
@@ -16,5 +20,5 @@ export type CanonicalPromptTemplate = {
   messages: PromptMessage[]
   temperature?: number
   maxOutputTokens?: number
-  structuredOutput?: OpenAIStructuredOutput
+  structuredOutput?: StructuredOutput
 }

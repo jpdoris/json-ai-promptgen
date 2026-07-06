@@ -1,9 +1,13 @@
 // src/composables/usePromptTemplateEditor.ts
 import { computed, ref, toRaw } from 'vue'
+import { defaultAdapterId, getAdapter } from '@/adapters'
+import type { CanonicalPromptTemplate, PromptRole } from '@/types/prompt-schema'
 
-export type PromptMessage = {
+// Editor-local message carries an `id` for stable list rendering; it is stripped
+// when converting to the canonical (provider-neutral) template.
+export type EditorMessage = {
   id: string
-  role: 'developer' | 'user' | 'assistant'
+  role: PromptRole
   content: string
 }
 
@@ -16,17 +20,18 @@ export type StructuredOutputConfig = {
 
 export type PromptTemplateForm = {
   name: string
+  provider: string
   model: string
   instructions: string
   temperature: number
   maxOutputTokens: number
-  messages: PromptMessage[]
+  messages: EditorMessage[]
   structuredOutput: StructuredOutputConfig
 }
 
-export type OpenAIResponsePayload = Record<string, unknown>
+export type ProviderPayload = Record<string, unknown>
 
-const createMessage = (role: PromptMessage['role'] = 'user', content = ''): PromptMessage => ({
+const createMessage = (role: PromptRole = 'user', content = ''): EditorMessage => ({
   id: crypto.randomUUID(),
   role,
   content,
@@ -35,7 +40,8 @@ const createMessage = (role: PromptMessage['role'] = 'user', content = ''): Prom
 function createDefaultForm(initial?: Partial<PromptTemplateForm>): PromptTemplateForm {
   return {
     name: initial?.name ?? 'New Prompt Template',
-    model: initial?.model ?? 'gpt-5.4',
+    provider: initial?.provider ?? defaultAdapterId,
+    model: initial?.model ?? 'gpt-4.1',
     instructions: initial?.instructions ?? '',
     temperature: initial?.temperature ?? 0.2,
     maxOutputTokens: initial?.maxOutputTokens ?? 800,
@@ -94,38 +100,40 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     return Boolean(current.model.trim()) && hasMessage && !schemaError.value
   })
 
-  const payloadPreview = computed<OpenAIResponsePayload>(() => {
+  // Provider-neutral template derived from the form; adapters translate this.
+  const canonicalTemplate = computed<CanonicalPromptTemplate>(() => {
     const current = form.value
 
-    const payload: OpenAIResponsePayload = {
+    const template: CanonicalPromptTemplate = {
       model: current.model,
-      input: current.messages.map((message) => ({
+      messages: current.messages.map((message) => ({
         role: message.role,
         content: message.content,
       })),
       temperature: current.temperature,
-      max_output_tokens: current.maxOutputTokens,
+      maxOutputTokens: current.maxOutputTokens,
     }
 
     if (current.instructions.trim()) {
-      payload.instructions = current.instructions
+      template.instructions = current.instructions
     }
 
     if (current.structuredOutput.enabled && parsedSchema.value) {
-      payload.response_format = {
-        type: 'json_schema',
-        json_schema: {
-          name: current.structuredOutput.name,
-          strict: current.structuredOutput.strict,
-          schema: parsedSchema.value,
-        },
+      template.structuredOutput = {
+        name: current.structuredOutput.name,
+        strict: current.structuredOutput.strict,
+        schema: parsedSchema.value,
       }
     }
 
-    return payload
+    return template
   })
 
-  function addMessage(role: PromptMessage['role'] = 'user') {
+  const payloadPreview = computed<ProviderPayload>(() =>
+    getAdapter(form.value.provider).toPayload(canonicalTemplate.value),
+  )
+
+  function addMessage(role: PromptRole = 'user') {
     form.value.messages.push(createMessage(role))
   }
 
@@ -134,19 +142,45 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     form.value.messages = form.value.messages.filter((message) => message.id !== id)
   }
 
-  function moveMessage(id: string, direction: 'up' | 'down') {
-    const messages = [...form.value.messages]
-    const index = messages.findIndex((message) => message.id === id)
-    if (index === -1) return
+  // Move the message with `fromId` into the slot currently held by `toId`.
+  function reorderMessages(fromId: string, toId: string) {
+    if (fromId === toId) return
 
-    const targetIndex = direction === 'up' ? index - 1 : index + 1
-    if (targetIndex < 0 || targetIndex >= messages.length) return
-    ;[messages[index], messages[targetIndex]] = [messages[targetIndex], messages[index]]
+    const messages = [...form.value.messages]
+    const fromIndex = messages.findIndex((message) => message.id === fromId)
+    const toIndex = messages.findIndex((message) => message.id === toId)
+    if (fromIndex === -1 || toIndex === -1) return
+
+    const [moved] = messages.splice(fromIndex, 1)
+    if (!moved) return
+    messages.splice(toIndex, 0, moved)
     form.value.messages = messages
   }
 
+  // Inverse of `canonicalTemplate`: expand a provider-neutral template back into
+  // editable form state. Keeps the currently selected provider.
+  function loadTemplate(template: CanonicalPromptTemplate, name?: string) {
+    form.value = createDefaultForm({
+      name,
+      provider: form.value.provider,
+      model: template.model,
+      instructions: template.instructions,
+      temperature: template.temperature,
+      maxOutputTokens: template.maxOutputTokens,
+      messages: template.messages.map((message) => createMessage(message.role, message.content)),
+      structuredOutput: template.structuredOutput
+        ? {
+            enabled: true,
+            name: template.structuredOutput.name,
+            strict: template.structuredOutput.strict,
+            schemaText: JSON.stringify(template.structuredOutput.schema, null, 2),
+          }
+        : undefined,
+    })
+  }
+
   function reset() {
-    form.value = createDefaultForm()
+    form.value = createDefaultForm({ provider: form.value.provider })
   }
 
   function exportTemplate() {
@@ -158,10 +192,12 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
     parsedSchema,
     schemaError,
     isValid,
+    canonicalTemplate,
     payloadPreview,
     addMessage,
     removeMessage,
-    moveMessage,
+    reorderMessages,
+    loadTemplate,
     reset,
     exportTemplate,
   }

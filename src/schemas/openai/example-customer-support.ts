@@ -1,8 +1,9 @@
-// schemas/openai/customer-support.ts
+// schemas/openai/example-customer-support.ts
+// Reference example of a CanonicalPromptTemplate.
 import type { CanonicalPromptTemplate } from '@/types/prompt-schema'
 
 export const customerSupportPrompt: CanonicalPromptTemplate = {
-  model: 'gpt-5.4',
+  model: 'gpt-4.1',
   instructions:
     'You are a support assistant. Answer clearly, briefly, and return structured JSON when a schema is provided.',
   messages: [
