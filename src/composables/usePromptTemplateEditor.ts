@@ -189,9 +189,10 @@ export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
   function loadTemplate(template: CanonicalPromptTemplate, name?: string) {
     const provider = form.value.provider
     form.value = createDefaultForm({
+      // Examples are provider-neutral, so keep the current provider and let its
+      // default model apply rather than the template's baked-in model id.
       name,
       provider,
-      model: template.model,
       instructions: template.instructions,
       temperature: template.temperature,
       maxOutputTokens: template.maxOutputTokens,
