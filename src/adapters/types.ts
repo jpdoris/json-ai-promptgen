@@ -11,6 +11,13 @@ export interface PromptAdapter {
   id: string
   /** Human-readable name shown in the provider selector. */
   label: string
+  /** Default model id used when the provider is selected. */
+  defaultModel: string
+  /**
+   * Whether this provider accepts a `temperature` sampling parameter. Drives both
+   * the editor (hides the field) and the payload (omits it) when unsupported.
+   */
+  supportsTemperature: boolean
   /** Build the provider-specific request payload from a canonical template. */
   toPayload(template: CanonicalPromptTemplate, vars?: TemplateVariables): Record<string, unknown>
 }

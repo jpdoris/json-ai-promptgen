@@ -1,5 +1,5 @@
 // src/composables/usePromptTemplateEditor.ts
-import { computed, ref, toRaw } from 'vue'
+import { computed, ref, toRaw, watch } from 'vue'
 import { defaultAdapterId, getAdapter } from '@/adapters'
 import type { CanonicalPromptTemplate, PromptRole } from '@/types/prompt-schema'
 
@@ -38,10 +38,11 @@ const createMessage = (role: PromptRole = 'user', content = ''): EditorMessage =
 })
 
 function createDefaultForm(initial?: Partial<PromptTemplateForm>): PromptTemplateForm {
+  const provider = initial?.provider ?? defaultAdapterId
   return {
     name: initial?.name ?? 'New Prompt Template',
-    provider: initial?.provider ?? defaultAdapterId,
-    model: initial?.model ?? 'gpt-4.1',
+    provider,
+    model: initial?.model ?? getAdapter(provider).defaultModel,
     instructions: initial?.instructions ?? '',
     temperature: initial?.temperature ?? 0.2,
     maxOutputTokens: initial?.maxOutputTokens ?? 800,
@@ -72,6 +73,15 @@ function createDefaultForm(initial?: Partial<PromptTemplateForm>): PromptTemplat
 
 export function usePromptTemplateEditor(initial?: Partial<PromptTemplateForm>) {
   const form = ref<PromptTemplateForm>(createDefaultForm(initial))
+
+  // Switching providers swaps in that provider's default model so the
+  // generated payload targets a model the provider actually serves.
+  watch(
+    () => form.value.provider,
+    (provider) => {
+      form.value.model = getAdapter(provider).defaultModel
+    },
+  )
 
   const parsedSchema = computed<Record<string, unknown> | null>(() => {
     const current = form.value.structuredOutput

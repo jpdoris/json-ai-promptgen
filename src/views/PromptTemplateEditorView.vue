@@ -34,6 +34,15 @@ function onSelectExample() {
 const providerLabel = computed(() => getAdapter(form.value.provider).label)
 const payloadJson = computed(() => JSON.stringify(payloadPreview.value, null, 2))
 
+const downloadName = computed(() => {
+  const slug = form.value.name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+  return `${slug || 'prompt'}.json`
+})
+
 const copied = ref(false)
 
 async function copyPayload() {
@@ -44,6 +53,18 @@ async function copyPayload() {
   } catch {
     copied.value = false
   }
+}
+
+function downloadPayload() {
+  const blob = new Blob([payloadJson.value], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.download = downloadName.value
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
 }
 
 function handleSubmit() {
@@ -93,8 +114,71 @@ function handleSubmit() {
     <aside class="preview-panel">
       <div class="preview-header">
         <h2>{{ providerLabel }} payload preview</h2>
-        <button type="button" @click="copyPayload">{{ copied ? 'Copied!' : 'Copy JSON' }}</button>
+        <div class="preview-actions">
+          <button
+            type="button"
+            class="icon-btn"
+            :title="copied ? 'Copied!' : 'Copy JSON'"
+            :aria-label="copied ? 'JSON copied to clipboard' : 'Copy JSON to clipboard'"
+            @click="copyPayload"
+          >
+            <svg
+              v-if="!copied"
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <rect x="9" y="9" width="13" height="13" rx="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+            </svg>
+            <svg
+              v-else
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M20 6 9 17l-5-5" />
+            </svg>
+          </button>
+          <button
+            type="button"
+            class="icon-btn"
+            :title="`Download ${downloadName}`"
+            :aria-label="`Download JSON as ${downloadName}`"
+            @click="downloadPayload"
+          >
+            <svg
+              width="16"
+              height="16"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              aria-hidden="true"
+            >
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <path d="M7 10l5 5 5-5" />
+              <path d="M12 15V3" />
+            </svg>
+          </button>
+        </div>
       </div>
+
+      <p class="sr-only" role="status" aria-live="polite">{{ copied ? 'Copied' : '' }}</p>
       <pre>{{ payloadJson }}</pre>
     </aside>
     </div>
@@ -189,6 +273,36 @@ function handleSubmit() {
 .preview-header h2 {
   font-size: 1rem;
   font-weight: 600;
+}
+.preview-actions {
+  display: flex;
+  gap: 0.4rem;
+}
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem;
+  color: var(--muted);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.icon-btn:hover {
+  background: var(--accent-tint);
+  border-color: var(--border-strong);
+  color: var(--accent);
+}
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
 }
 pre {
   margin: 0;

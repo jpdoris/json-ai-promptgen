@@ -1,14 +1,7 @@
 // adapters/openai.ts
 import type { CanonicalPromptTemplate } from '@/types/prompt-schema'
 import type { PromptAdapter, TemplateVariables } from './types'
-
-function interpolate(template: string, vars: TemplateVariables): string {
-  return template.replace(/\{\{(.*?)\}\}/g, (_, rawKey) => {
-    const key = String(rawKey).trim()
-    const value = vars[key]
-    return value == null ? '' : String(value)
-  })
-}
+import { interpolate } from './interpolate'
 
 // Targets the OpenAI Responses API (client.responses.create).
 export function toOpenAIResponsesPayload(
@@ -55,5 +48,7 @@ export function toOpenAIResponsesPayload(
 export const openaiAdapter: PromptAdapter = {
   id: 'openai',
   label: 'OpenAI',
+  defaultModel: 'gpt-4.1',
+  supportsTemperature: true,
   toPayload: toOpenAIResponsesPayload,
 }

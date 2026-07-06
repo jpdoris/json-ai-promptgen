@@ -1,7 +1,8 @@
 <!-- src/components/PromptTemplateForm.vue -->
 <script setup lang="ts">
 import { computed, nextTick, ref } from 'vue'
-import { adapterList } from '@/adapters'
+import { adapterList, getAdapter } from '@/adapters'
+import CollapsiblePanel from '@/components/CollapsiblePanel.vue'
 import FieldHint from '@/components/FieldHint.vue'
 import type { PromptTemplateForm } from '@/composables/usePromptTemplateEditor'
 import type { PromptRole } from '@/types/prompt-schema'
@@ -20,6 +21,8 @@ const emit = defineEmits<{
 }>()
 
 const providers = adapterList
+
+const currentAdapter = computed(() => getAdapter(props.modelValue.provider))
 
 const draggingId = ref<string | null>(null)
 const dragOverId = ref<string | null>(null)
@@ -125,9 +128,7 @@ function handleSubmit() {
 
 <template>
   <form class="prompt-form" @submit.prevent="handleSubmit">
-    <section class="panel">
-      <h2>Template</h2>
-
+    <CollapsiblePanel title="Template">
       <label class="field">
         <span class="field-label">
           Name
@@ -182,12 +183,10 @@ function handleSubmit() {
           @input="updateField('instructions', ($event.target as HTMLTextAreaElement).value)"
         />
       </label>
-    </section>
+    </CollapsiblePanel>
 
-    <section class="panel">
-      <h2>Generation</h2>
-
-      <label class="field">
+    <CollapsiblePanel title="Generation">
+      <label v-if="currentAdapter.supportsTemperature" class="field">
         <span class="field-label">
           Temperature
           <FieldHint
@@ -217,14 +216,9 @@ function handleSubmit() {
           @input="updateField('maxOutputTokens', Number(($event.target as HTMLInputElement).value))"
         />
       </label>
-    </section>
+    </CollapsiblePanel>
 
-    <section class="panel">
-      <div class="panel-header">
-        <h2>Messages</h2>
-        <button type="button" @click="$emit('add-message', 'user')">Add message</button>
-      </div>
-
+    <CollapsiblePanel title="Messages">
       <div
         v-for="(message, index) in form.messages"
         :key="message.id"
@@ -319,9 +313,13 @@ function handleSubmit() {
 
         <small>Message {{ index + 1 }}</small>
       </div>
-    </section>
 
-    <section class="panel">
+      <button type="button" class="add-message-btn" @click="$emit('add-message', 'user')">
+        + Add message
+      </button>
+    </CollapsiblePanel>
+
+    <CollapsiblePanel title="Structured output">
       <label class="checkbox">
         <input
           :checked="form.structuredOutput.enabled"
@@ -380,7 +378,7 @@ function handleSubmit() {
 
         <p v-if="schemaError" class="error">{{ schemaError }}</p>
       </template>
-    </section>
+    </CollapsiblePanel>
 
     <div class="actions">
       <button type="submit">Save template</button>
@@ -393,25 +391,14 @@ function handleSubmit() {
   display: grid;
   gap: 1rem;
 }
-.panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 1rem;
-  display: grid;
-  gap: 1rem;
-}
-.panel h2 {
-  font-size: 1.05rem;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-}
-.panel-header,
 .actions {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
+}
+.add-message-btn {
+  justify-self: start;
 }
 .field {
   display: grid;

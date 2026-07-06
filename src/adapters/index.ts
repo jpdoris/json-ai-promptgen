@@ -3,9 +3,11 @@
 // implement PromptAdapter in a sibling file and add it to `adapters` below.
 import type { PromptAdapter } from './types'
 import { openaiAdapter } from './openai'
+import { anthropicAdapter } from './anthropic'
 
 export const adapters: Record<string, PromptAdapter> = {
   [openaiAdapter.id]: openaiAdapter,
+  [anthropicAdapter.id]: anthropicAdapter,
 }
 
 export const adapterList: PromptAdapter[] = Object.values(adapters)
