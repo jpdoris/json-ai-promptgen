@@ -1,54 +1,136 @@
 # json-promptgen
 
-This template should help get you started developing with Vue 3 in Vite.
+Build a prompt template once and preview the **exact JSON request payload** for each model
+provider — OpenAI, Anthropic, and Google Gemini. It runs entirely in the browser: no backend,
+no API keys, no network calls. You author a provider-neutral template and the app translates it
+into each provider's real request shape, which you can copy or download.
 
-## Recommended IDE Setup
+![Editor — light theme, OpenAI payload](docs/screenshots/editor-light.png)
 
-[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
+<p align="center"><em>The same template rendered for Anthropic, in dark theme — note the extracted
+<code>system</code> field, <code>output_config.format</code>, and that Temperature is hidden because
+Opus 4.8 doesn't accept it.</em></p>
 
-## Recommended Browser Setup
+![Editor — dark theme, Anthropic payload](docs/screenshots/editor-dark.png)
 
-- Chromium-based browsers (Chrome, Edge, Brave, etc.):
-  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd)
-  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
-- Firefox:
-  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
-  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
+## Features
 
-## Type Support for `.vue` Imports in TS
+- **Multi-provider output** — one canonical template renders to OpenAI (Responses API),
+  Anthropic (Messages API), and Gemini (`generateContent`) shapes.
+- **Per-model awareness** — model catalogs carry capabilities, so the editor hides the
+  Temperature field and omits it from the payload for models that reject it, gates structured
+  output to models that support it, and caps `max output tokens` per model.
+- **Provider-correct translation** — system prompts, role names, and structured-output formats
+  are mapped per provider (e.g. a `developer` message folds into Anthropic's top-level `system`;
+  Gemini's assistant role becomes `model`).
+- **Structured output** — define a JSON Schema and see it embedded the right way for each
+  provider (`text.format`, `output_config.format`, or `responseSchema`).
+- **Message editor** — reorder messages by drag-and-drop or keyboard, with per-provider role
+  options and shape validation (e.g. Anthropic/Gemini must start with a user turn).
+- **Template variables** — `{{ placeholders }}` in message and instruction text.
+- **Ready-made examples**, a live **payload preview**, **copy** and **download** actions, and a
+  theme-aware UI (light / dark / system) with a matching favicon.
+- **Static & portable** — builds to plain HTML/CSS/JS; host it anywhere.
 
-TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
+## How it works
 
-## Customize configuration
-
-See [Vite Configuration Reference](https://vite.dev/config/).
-
-## Project Setup
-
-```sh
-npm install
+```
+Editor form  ──▶  CanonicalPromptTemplate  ──▶  Provider adapter  ──▶  Provider JSON payload
+(provider-neutral)     (neutral shape)         (openai/anthropic/gemini)   (live preview)
 ```
 
-### Compile and Hot-Reload for Development
+The canonical template is provider-neutral. Each **adapter** owns the translation to one
+provider's API, plus that provider's model catalog, allowed roles, and message constraints.
+Adding a provider or model touches only the adapter layer — the editor and templates never change.
+
+## Providers & models
+
+| Provider | API | Models in catalog |
+|---|---|---|
+| OpenAI | Responses (`client.responses.create`) | GPT-4.1, GPT-4o |
+| Anthropic | Messages (`client.messages.create`) | Opus 4.8, Sonnet 5, Fable 5, Haiku 4.5 |
+| Google | Gemini (`generateContent`) | Gemini 2.5 Pro, Gemini 2.5 Flash |
+
+The model list is a **hand-maintained static catalog** (a keyless browser app can't query provider
+APIs). Any model not listed can still be used via the **Custom…** option in the Model dropdown.
+Model capability data is set at a model's launch and rarely changes, so keeping it current is
+mostly a matter of adding rows for new models.
+
+## Getting started
+
+**Prerequisites:** Node `^20.19.0 || >=22.12.0`.
 
 ```sh
-npm run dev
+npm install       # install dependencies
+npm run dev       # start the dev server with hot reload
 ```
 
-### Type-Check, Compile and Minify for Production
+Then open the printed local URL.
 
-```sh
-npm run build
+### Scripts
+
+| Script | What it does |
+|---|---|
+| `npm run dev` | Vite dev server with HMR |
+| `npm run build` | Type-check + production build to `dist/` |
+| `npm run preview` | Serve the production build locally |
+| `npm run type-check` | `vue-tsc` type checking |
+| `npm run lint` | oxlint + ESLint (with `--fix`) |
+| `npm run format` | Prettier over `src/` |
+| `npm run test:unit` | Vitest (no unit tests yet) |
+
+## Project structure
+
+```
+src/
+  adapters/        Provider adapters + registry (openai, anthropic, gemini),
+                   the PromptAdapter/ModelSpec types, model resolver, validation
+  components/      Editor UI (form, collapsible panels, field hints, theme toggle)
+  composables/     Editor state (usePromptTemplateEditor), theme (useTheme)
+  examples/        Ready-made canonical templates shown in "Load example"
+  types/           CanonicalPromptTemplate + shared prompt types
+  views/           The editor page
 ```
 
-### Run Unit Tests with [Vitest](https://vitest.dev/)
+## Extending
 
-```sh
-npm run test:unit
+**Add a model to a provider** — add one row to that adapter's `models: ModelSpec[]`:
+
+```ts
+{ id: 'gpt-4.1-mini', label: 'GPT-4.1 mini', supportsTemperature: true,
+  supportsStructuredOutput: true, maxOutputTokens: 16384 }
 ```
 
-### Lint with [ESLint](https://eslint.org/)
+**Add an example** — create a `CanonicalPromptTemplate` in `src/examples/` and register it in
+`src/examples/index.ts`.
 
-```sh
-npm run lint
-```
+**Add a provider** — implement the `PromptAdapter` interface in `src/adapters/<name>.ts`
+(`id`, `label`, `supportedRoles`, `models`, `defaultModel`, optional `messageConstraints`, and a
+`toPayload()` that maps the canonical template to the provider's request body), then register it in
+`src/adapters/index.ts`. No changes to the editor or canonical schema are needed.
+
+## Deployment
+
+The build is a static SPA — host `dist/` on any static host (Netlify, GitHub Pages, S3, nginx, …).
+
+- **Root path:** `npm run build` (default `base` is `/`).
+- **Subpath:** `BASE_PATH=/promptgen/ npm run build` — asset, router, and favicon paths follow the
+  base automatically.
+- **Deep links:** the app currently has a single route, so a server rewrite is optional; if you
+  add routes and can't configure the host, switch the router to `createWebHashHistory()`.
+
+## Notes
+
+- This tool **generates request payloads** — it does not call any provider API, so no keys are
+  required or handled. Paste the copied JSON into your own backend/SDK to actually run it.
+- Some models reject fields the tool models generically (e.g. current Claude models reject
+  `temperature`); the per-model capability flags handle the common cases, and the **Custom…**
+  model option assumes a permissive profile.
+
+## Tech stack
+
+Vue 3 · Vite · TypeScript · Vue Router · Pinia · Inter (Google Fonts).
+
+## License
+
+No license yet — add a `LICENSE` file (e.g. MIT) before relying on this publicly.
