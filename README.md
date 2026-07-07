@@ -1,6 +1,6 @@
 # json-promptgen
 
-Build a prompt template once and preview the **exact JSON request payload** for each model
+Build a prompt template and preview the **exact JSON request payload** for each model
 provider — OpenAI, Anthropic, and Google Gemini. It runs entirely in the browser: no backend,
 no API keys, no network calls. You author a provider-neutral template and the app translates it
 into each provider's real request shape, which you can copy or download.
@@ -49,10 +49,10 @@ Adding a provider or model touches only the adapter layer — the editor and tem
 
 There are **two** different JSON files, and it helps to know which is which:
 
-- **Payload JSON** — the *Download* icon in the preview panel. This is the provider-specific
+- **Payload JSON** — the _Download_ icon in the preview panel. This is the provider-specific
   request body (`text.format`, `output_config`, `contents`…). It's **output**: paste it into your
   own backend/SDK to run the request. It's provider-specific and not meant to be re-imported.
-- **Template JSON** — the *Export template* button. This is the **editable template itself** (name,
+- **Template JSON** — the _Export template_ button. This is the **editable template itself** (name,
   provider, model, messages, structured-output config) — the source you were editing, and it
   round-trips.
 
@@ -70,11 +70,11 @@ templates are rejected with an inline message instead of crashing.
 
 ## Providers & models
 
-| Provider | API | Models in catalog |
-|---|---|---|
-| OpenAI | Responses (`client.responses.create`) | GPT-4.1, GPT-4o |
-| Anthropic | Messages (`client.messages.create`) | Opus 4.8, Sonnet 5, Fable 5, Haiku 4.5 |
-| Google | Gemini (`generateContent`) | Gemini 2.5 Pro, Gemini 2.5 Flash |
+| Provider  | API                                   | Models in catalog                      |
+| --------- | ------------------------------------- | -------------------------------------- |
+| OpenAI    | Responses (`client.responses.create`) | GPT-4.1, GPT-4o                        |
+| Anthropic | Messages (`client.messages.create`)   | Opus 4.8, Sonnet 5, Fable 5, Haiku 4.5 |
+| Google    | Gemini (`generateContent`)            | Gemini 2.5 Pro, Gemini 2.5 Flash       |
 
 The model list is a **hand-maintained static catalog** (a keyless browser app can't query provider
 APIs). Any model not listed can still be used via the **Custom…** option in the Model dropdown.
@@ -94,15 +94,15 @@ Then open the printed local URL.
 
 ### Scripts
 
-| Script | What it does |
-|---|---|
-| `npm run dev` | Vite dev server with HMR |
-| `npm run build` | Type-check + production build to `dist/` |
-| `npm run preview` | Serve the production build locally |
-| `npm run type-check` | `vue-tsc` type checking |
-| `npm run lint` | oxlint + ESLint (with `--fix`) |
-| `npm run format` | Prettier over `src/` |
-| `npm run test:unit` | Run the Vitest unit tests |
+| Script               | What it does                             |
+| -------------------- | ---------------------------------------- |
+| `npm run dev`        | Vite dev server with HMR                 |
+| `npm run build`      | Type-check + production build to `dist/` |
+| `npm run preview`    | Serve the production build locally       |
+| `npm run type-check` | `vue-tsc` type checking                  |
+| `npm run lint`       | oxlint + ESLint (with `--fix`)           |
+| `npm run format`     | Prettier over `src/`                     |
+| `npm run test:unit`  | Run the Vitest unit tests                |
 
 ## Testing
 
@@ -182,4 +182,4 @@ Vue 3 · Vite · TypeScript · Vue Router · Pinia · Inter (Google Fonts).
 
 ## License
 
-No license yet — add a `LICENSE` file (e.g. MIT) before relying on this publicly.
+[MIT](./LICENSE) © Jamie Doris
